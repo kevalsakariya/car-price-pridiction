@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Price Prediction</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Global Dark Theme */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 450px;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 15px rgba(0, 255, 150, 0.5);
+            text-align: center;
+        }
+
+        h2 {
+            color: #00ff96;
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            text-align: left;
+            margin-top: 10px;
+            color: #b3b3b3;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #00ff96;
+            background: #2b2b2b;
+            color: white;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #00ff96;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background: #00cc77;
+            transform: scale(1.05);
+        }
+
+        .loading {
+            display: none;
+            margin-top: 10px;
+            font-size: 16px;
+            color: #00ff96;
+        }
+
+        #prediction {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ff96;
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                width: 95%;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>🚗 Car Price Prediction</h2>
+
+        <form id="predictionForm">
+            <label>Select Company:</label>
+            <select id="company" name="company" required>
+                {% for company in companies %}
+                    <option value="{{ company }}">{{ company }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Select Car Model:</label>
+            <select id="car_model" name="car_model" required>
+                <option value="">Select a Car Model</option>
+            </select>
+
+            <label>Select Year:</label>
+            <select id="year" name="year" required>
+                {% for year in years %}
+                    <option value="{{ year }}">{{ year }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Fuel Type:</label>
+            <select id="fuel_type" name="fuel_type" required>
+                {% for fuel in fuel_types %}
+                    <option value="{{ fuel }}">{{ fuel }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Kilometers Driven:</label>
+            <input type="number" id="kms_driven" name="kms_driven" min="100" required placeholder="Enter kms driven">
+
+            <button type="submit">Predict Price</button>
+
+            <div class="loading">⏳ Predicting price...</div>
+        </form>
+
+        <div id="prediction"></div>
+    </div>
+
+    <script>
+        // Fetch car models when company is selected
+        $("#company").change(function() {
+            var company = $(this).val();
+            $("#car_model").empty().append('<option value="">Select a Car Model</option>');
+
+            if (company !== "Select Company") {
+                $.get("/get_car_models", { company: company }, function(data) {
+                    data.forEach(function(model) {
+                        $("#car_model").append('<option value="' + model + '">' + model + '</option>');
+                    });
+                });
+            }
+        });
+
+        // Handle form submission for prediction
+        $("#predictionForm").submit(function(event) {
+            event.preventDefault();
+
+            $(".loading").show(); // Show loading text
+            $("#prediction").html(""); // Clear previous result
+
+            $.ajax({
+                url: "/predict",
+                type: "POST",
+                data: $(this).serialize(),
+                success: function(response) {
+                    $(".loading").hide();
+                    $("#prediction").html("💰 Estimated Price: ₹" + response);
+                },
+                error: function() {
+                    $(".loading").hide();
+                    $("#prediction").html("❌ Error predicting price. Please try again.");
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
